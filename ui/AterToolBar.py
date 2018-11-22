@@ -1,6 +1,7 @@
 import wx
 from TermianalTabPanel import TerminalTabPanel
 
+
 class AterToolBar():
     def __init__(self, parent):
         TBFLAGS = (wx.TB_HORIZONTAL |

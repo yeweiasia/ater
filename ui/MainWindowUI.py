@@ -5,6 +5,7 @@ from AterAuiNotebook import AterAuiNotebook
 from TermianalTabPanel import TerminalTabPanel
 from AterMenuBar import AterMenuBar
 from AterToolBar import AterToolBar
+from ssh.TermEmulator import TermEmulator
 
 
 class MainWindowUI(wx.Frame):
@@ -12,10 +13,10 @@ class MainWindowUI(wx.Frame):
     def __init__(self, title):
         title = "Ater"
         wx.Frame.__init__(self, None, wx.ID_ANY,
-                          title=title, size=(600, 400))
+                          title=title, size=(800, 600))
         self.aui_mgr = AterAuiManager(self)
         self.notebook = AterAuiNotebook(self)
-        self.notebook.addPanel("tab-default", TerminalTabPanel, True)
+        self.notebook.addPanel("tab-default", TerminalTabPanel, TermEmulator, True)
 
         self._notebook_style = self.notebook.default_style
         self.aui_mgr.AddPane(self.notebook,

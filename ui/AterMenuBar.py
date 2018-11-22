@@ -27,8 +27,8 @@ class AterMenuBar(wx.MenuBar):
     def createOptionMenu(self):
         optionMenu = wx.Menu()
         self.bindEvent(self.parent, optionMenu.Append(wx.ID_ANY,
-                                  "Disable Current Tab"),
-               self.parent.OnDisableTab)
+                                  "Exit"),
+               self.parent.OnExit)
         return optionMenu
 
 

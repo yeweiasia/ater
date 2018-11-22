@@ -1,5 +1,6 @@
 import wx.aui as aui
 
+
 class AterAuiManager(aui.AuiManager):
 
     def __init__(self, managed_window):
