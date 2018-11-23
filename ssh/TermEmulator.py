@@ -14,10 +14,11 @@ from paramiko.py3compat import u
 
 
 class TermEmulator():
-    def __init__(self, output_call):
+    def __init__(self, output_call, input_call):
         self.system = self.sysDetect()
         self.trans = None
         self.output_call = output_call
+        self.input_call = input_call
         self.init_shell()
 
     def sysDetect(self):

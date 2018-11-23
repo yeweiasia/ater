@@ -14,12 +14,6 @@ class AterAuiNotebook(aui.AuiNotebook):
         import threading
         page = panel(self)
 
-        #init session if session is None
-        if not page.session:
-            #TO-DO: open session dialog to get connnection info
-            page.session = SessionManager(self.parent)
-            pass
-
         backendThread = threading.Thread(target=self.initBackendThread, args=(backend, page))
         backendThread.start()
 
@@ -27,6 +21,12 @@ class AterAuiNotebook(aui.AuiNotebook):
 
     #pass ui output method to backend thread
     def initBackendThread(self, backend, page):
+
+        #init session if session is None
+        if not page.session:
+            #TO-DO: open session dialog to get connnection info
+            page.session = SessionManager(self.parent)
+
         term = backend(page.appendText)
         page.term = term
 
