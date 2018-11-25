@@ -14,11 +14,11 @@ from paramiko.py3compat import u
 
 
 class TermEmulator():
-    def __init__(self, output_call, input_call):
+    def __init__(self, output_call):
         self.system = self.sysDetect()
         self.trans = None
+        self.chan = None
         self.output_call = output_call
-        self.input_call = input_call
         self.init_shell()
 
     def sysDetect(self):
@@ -29,6 +29,13 @@ class TermEmulator():
         except ImportError:
             system = "windows"
         return system
+
+    def sendChar(self, char):
+        try:
+            self.chan.send(char)
+        except EOFError:
+            # user hit ^Z or F6
+            pass
 
     def agent_auth(self, transport, username):
         """
@@ -132,7 +139,7 @@ class TermEmulator():
             while True:
                 data = sock.recv(256)
                 if not data:
-                    sys.stdout.write("\r\n*** EOF ***\r\n\r\n")
+                    self.output_call("\r\n*** EOF ***\r\n\r\n")
                     sys.stdout.flush()
                     break
                 self.output_call(data)
@@ -140,16 +147,6 @@ class TermEmulator():
 
         writer = threading.Thread(target=writeall, args=(chan,))
         writer.start()
-
-        try:
-            while True:
-                d = sys.stdin.read(1)
-                if not d:
-                    break
-                chan.send(d)
-        except EOFError:
-            # user hit ^Z or F6
-            pass
 
 
     def init_shell(self, hostname):
@@ -174,7 +171,7 @@ class TermEmulator():
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((hostname, port))
         except Exception as e:
-            print("*** Connect failed: " + str(e))
+            self.output_call("*** Connect failed: " + str(e))
             traceback.print_exc()
             sys.exit(1)
 
@@ -183,7 +180,7 @@ class TermEmulator():
             try:
                 self.trans.start_client()
             except paramiko.SSHException:
-                print("*** SSH negotiation failed.")
+                self.output_call("*** SSH negotiation failed.")
                 sys.exit(1)
 
             try:
@@ -196,25 +193,25 @@ class TermEmulator():
                         os.path.expanduser("~/ssh/known_hosts")
                     )
                 except IOError:
-                    print("*** Unable to open host keys file")
+                    self.output_call("*** Unable to open host keys file")
                     keys = {}
 
             # check server's host key -- this is important.
             key = self.trans.get_remote_server_key()
             if hostname not in keys:
-                print("*** WARNING: Unknown host key!")
+                self.output_call("*** WARNING: Unknown host key!")
             elif key.get_name() not in keys[hostname]:
-                print("*** WARNING: Unknown host key!")
+                self.output_call("*** WARNING: Unknown host key!")
             elif keys[hostname][key.get_name()] != key:
-                print("*** WARNING: Host key has changed!!!")
+                self.output_call("*** WARNING: Host key has changed!!!")
                 sys.exit(1)
             else:
-                print("*** Host key OK.")
+                self.output_call("*** Host key OK.")
 
             # get username
             if username == "":
                 default_username = getpass.getuser()
-                username = raw_input("Username [%s]: " % default_username)
+                self.output_call("Username [%s]: " % default_username)
                 if len(username) == 0:
                     username = default_username
 
@@ -226,17 +223,16 @@ class TermEmulator():
                 self.trans.close()
                 sys.exit(1)
 
-            chan = self.trans.open_session()
-            chan.get_pty()
-            chan.invoke_shell()
-            print("*** Here we go!\n")
+            self.chan = self.trans.open_session()
+            self.chan.get_pty()
+            self.chan.invoke_shell()
 
             if self.system == "posix":
-                self.posix_shell(chan)
+                self.posix_shell(self.chan)
             elif self.system =="windows":
-                self.windows_shell(chan)
+                self.windows_shell(self.chan)
 
-            chan.close()
+            self.chan.close()
             self.trans.close()
 
         except Exception as e:

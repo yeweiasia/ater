@@ -1,5 +1,6 @@
 import wx
 from TermianalTabPanel import TerminalTabPanel
+from ssh.TermEmulator import TermEmulator
 
 
 class AterToolBar():
@@ -28,7 +29,7 @@ class AterToolBar():
         self.toolbar.Realize()
 
     def OnBtnNewSessionClicked(self, event):
-        self.parent.notebook.addPanel("tab-default", TerminalTabPanel, True)
+        self.parent.notebook.addPanel("tab-default", TerminalTabPanel, TermEmulator, True)
 
     def OnBtnOpenSessionClicked(self,event):
-        self.parent.notebook.addPanel("tab-default", TerminalTabPanel, True)
+        self.parent.notebook.addPanel("tab-default", TerminalTabPanel, TermEmulator, True)

@@ -4,12 +4,16 @@ class SessionManager():
 
     def __init__(self, parent):
         self.parent = parent
-        sessionManagerDialog = SessionManagerDialog(parent, "New Session").ShowModal()
+        self.sessionManagerDialog = SessionManagerDialog(parent, "New Session")
+        self.sessionManagerDialog.CenterOnParent()
+        self.sessionManagerDialog.ShowModal()
 
 class SessionManagerDialog(wx.Dialog):
 
     def __init__(self, parent, title):
         wx.Dialog.__init__(self, parent=parent, id=wx.ID_ANY, title=title, size=(450, 600))
+        self.Bind(wx.EVT_CLOSE, self.onClose)
+        self.parent = parent
         panel = wx.Panel(self)
         hostLbl = wx.StaticText(panel, -1, "Host:")
         self.host = wx.TextCtrl(panel, -1, "")
@@ -63,3 +67,6 @@ class SessionManagerDialog(wx.Dialog):
         self.port.SetValue("")
         self.username.SetValue("")
         self.password.SetValue("")
+
+    def onClose(self, event):
+        self.Destroy()
