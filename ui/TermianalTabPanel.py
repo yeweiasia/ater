@@ -38,6 +38,11 @@ class TerminalTabPanel(wx.Panel):
         if not self.dealingWithSpecialKey(text):
             self.outputCtrl.WriteText(text)
 
+        # scroll to the end of output
+        #self.outputCtrl.SetScrollPos( wx.VERTICAL,self.outputCtrl.GetScrollRange(wx.VERTICAL))
+        self.outputCtrl.ShowPosition(self.outputCtrl.GetLastPosition())
+
+
     def OnChar(self, event):
         self.sendToBackend(chr(event.GetKeyCode()))
         #event.Skip()
