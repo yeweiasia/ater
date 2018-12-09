@@ -33,8 +33,20 @@ class TerminalTabPanel(wx.Panel):
 
         #TO-DO deal with text colour
         text = strip_color(text)
-        self.outputCtrl.WriteText(text)
+
+        # if special key pressed, dealing with it, otherwise write to output
+        if not self.dealingWithSpecialKey(text):
+            self.outputCtrl.WriteText(text)
 
     def OnChar(self, event):
         self.sendToBackend(chr(event.GetKeyCode()))
         #event.Skip()
+
+    def dealingWithSpecialKey(self, keyValue):
+        # backspace
+        if keyValue == '\b':
+            lastPosition = self.outputCtrl.GetLastPosition()
+            self.outputCtrl.Delete((lastPosition-2, lastPosition-1))
+            return True
+
+        return False
