@@ -1,5 +1,7 @@
 import wx
 
+from ssh.AuthInfo import AuthInfo
+
 class SessionManager():
 
     def __init__(self, parent):
@@ -11,16 +13,17 @@ class SessionManager():
 class SessionManagerDialog(wx.Dialog):
 
     def __init__(self, parent, title):
+        self.auth_info = AuthInfo()
         wx.Dialog.__init__(self, parent=parent, id=wx.ID_ANY, title=title, size=(450, 600))
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.parent = parent
         panel = wx.Panel(self)
         hostLbl = wx.StaticText(panel, -1, "Host:")
-        self.host = wx.TextCtrl(panel, -1, "")
+        self.hostname = wx.TextCtrl(panel, -1, "192.168.3.15")
         portLbl = wx.StaticText(panel, -1, "Port:")
         self.port = wx.TextCtrl(panel, -1, "22")
         usernameLbl = wx.StaticText(panel, -1, "Username:")
-        self.username = wx.TextCtrl(panel, -1, "")
+        self.username = wx.TextCtrl(panel, -1, "yewei")
         passwordLbl = wx.StaticText(panel, -1, "Password:")
         self.password = wx.TextCtrl(panel, -1, "", style=wx.TE_PASSWORD)
         self.btn = wx.Button(panel, wx.ID_OK, label="ok", size=(50, 20), pos=(200, 550))
@@ -30,7 +33,7 @@ class SessionManagerDialog(wx.Dialog):
         addrSizer = wx.FlexGridSizer(cols=2, hgap=5, vgap=5)
         addrSizer.AddGrowableCol(1)
         addrSizer.Add(hostLbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
-        addrSizer.Add(self.host, 0, wx.EXPAND)
+        addrSizer.Add(self.hostname, 0, wx.EXPAND)
         addrSizer.Add(portLbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
         addrSizer.Add(self.port, 0, wx.EXPAND)
         addrSizer.Add(usernameLbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
@@ -55,12 +58,12 @@ class SessionManagerDialog(wx.Dialog):
 
 
     def getSessionInfo(self, event):
-        hostname = self.host.GetValue()
-        portNumber = self.port.GetValue()
-        username = self.username.GetValue()
-        password = self.password.GetValue()
+        self.auth_info.hostname = self.hostname.GetValue()
+        self.auth_info.port = int(self.port.GetValue())
+        self.auth_info.username = self.username.GetValue()
+        self.auth_info.password = self.password.GetValue()
         self.Destroy()
-        return (hostname, portNumber, username, password)
+        #return (hostname, portNumber, username, password)
 
     def clear(self, event):
         self.host.SetValue("")

@@ -1,5 +1,4 @@
 import socket
-import sys
 import paramiko
 import base64
 from binascii import hexlify
@@ -8,18 +7,19 @@ import os
 import select
 import socket
 import sys
-import time
 import traceback
 from paramiko.py3compat import u
+import wx
 
 
 class TermEmulator():
-    def __init__(self, output_call):
+    def __init__(self, output_call, auth_info):
         self.system = self.sysDetect()
+        self.auth_info = auth_info
         self.trans = None
         self.chan = None
         self.output_call = output_call
-        self.init_shell()
+        self.init_shell(auth_info)
 
     def sysDetect(self):
         system = "posix"
@@ -29,6 +29,9 @@ class TermEmulator():
         except ImportError:
             system = "windows"
         return system
+
+    def sendToTerminalUI(self, data):
+        wx.CallAfter(self.output_call, data)
 
     def sendChar(self, char):
         try:
@@ -91,6 +94,9 @@ class TermEmulator():
             pw = getpass.getpass("Password for %s@%s: " % (username, hostname))
             self.trans.auth_password(username, pw)
 
+    def login_auth(self):
+        if self.auth_info.is_psw:
+            self.trans.auth_password(self.auth_info.username, self.auth_info.password)
 
     def posix_shell(self, chan):
         try:
@@ -126,50 +132,36 @@ class TermEmulator():
         finally:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, oldtty)
 
-
     # thanks to Mike Looijmans for this code
     def windows_shell(self, chan):
         import threading
 
-        self.output_call(
-            "Line-buffered terminal emulation. Press F6 or ^Z to send EOF.\r\n\r\n"
-        )
-
-        def writeall(sock):
+        def writeall(sock, output):
             while True:
                 data = sock.recv(256)
                 if not data:
-                    self.output_call("\r\n*** EOF ***\r\n\r\n")
-                    sys.stdout.flush()
+                    output("\r\n*** EOF ***\r\n\r\n")
                     break
-                self.output_call(data)
-                #sys.stdout.flush()
+                output(data)
 
-        writer = threading.Thread(target=writeall, args=(chan,))
+        writer = threading.Thread(target=writeall, args=(chan, self.sendToTerminalUI))
         writer.start()
 
-
-    def init_shell(self, hostname):
-        # setup logging
+    def init_shell(self, auth_info):
         paramiko.util.log_to_file("demo.log")
-
-        username = ""
-        if hostname.find("@") >= 0:
-            username, hostname = hostname.split("@")
-        else:
-            hostname = self.output_call("Hostname: ")
-        if len(hostname) == 0:
+        if auth_info.hostname.find("@") >= 0:
+            auth_info.username, auth_info.hostname = auth_info.hostname.split("@")
+        if len(auth_info.hostname) == 0:
             self.output_call("*** Hostname required.")
             sys.exit(1)
-        port = 22
-        if hostname.find(":") >= 0:
-            hostname, portstr = hostname.split(":")
-            port = int(portstr)
+        if auth_info.hostname.find(":") >= 0:
+            auth_info.hostname, auth_info.port = auth_info.hostname.split(":")
+            auth_info.port = int(auth_info.port)
 
         # now connect
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((hostname, port))
+            sock.connect((auth_info.hostname, auth_info.port))
         except Exception as e:
             self.output_call("*** Connect failed: " + str(e))
             traceback.print_exc()
@@ -198,26 +190,27 @@ class TermEmulator():
 
             # check server's host key -- this is important.
             key = self.trans.get_remote_server_key()
-            if hostname not in keys:
+            if auth_info.hostname not in keys:
                 self.output_call("*** WARNING: Unknown host key!")
-            elif key.get_name() not in keys[hostname]:
+            elif key.get_name() not in keys[auth_info.hostname]:
                 self.output_call("*** WARNING: Unknown host key!")
-            elif keys[hostname][key.get_name()] != key:
+            elif keys[auth_info.hostname][key.get_name()] != key:
                 self.output_call("*** WARNING: Host key has changed!!!")
                 sys.exit(1)
             else:
                 self.output_call("*** Host key OK.")
 
             # get username
-            if username == "":
+            if auth_info.username == "":
                 default_username = getpass.getuser()
                 self.output_call("Username [%s]: " % default_username)
-                if len(username) == 0:
-                    username = default_username
+                if len(auth_info.username) == 0:
+                    auth_info.username = default_username
 
-            self.agent_auth(self.trans, username)
+            self.agent_auth(self.trans, auth_info.username)
             if not self.trans.is_authenticated():
-                self.manual_auth(username, hostname)
+                # self.manual_auth(auth_info.username, auth_info.hostname)
+                self.login_auth()
             if not self.trans.is_authenticated():
                 print("*** Authentication failed. :(")
                 self.trans.close()
@@ -229,11 +222,8 @@ class TermEmulator():
 
             if self.system == "posix":
                 self.posix_shell(self.chan)
-            elif self.system =="windows":
+            elif self.system == "windows":
                 self.windows_shell(self.chan)
-
-            self.chan.close()
-            self.trans.close()
 
         except Exception as e:
             print("*** Caught exception: " + str(e.__class__) + ": " + str(e))
@@ -243,3 +233,7 @@ class TermEmulator():
             except:
                 pass
             sys.exit(1)
+
+    def close(self):
+        self.chan.close()
+        self.trans.close()

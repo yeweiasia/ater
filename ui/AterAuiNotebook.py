@@ -11,12 +11,9 @@ class AterAuiNotebook(aui.AuiNotebook):
         self.SetWindowStyleFlag(self.default_style)
 
     def addPanel(self, label, panel, backend, selected):
-        import threading
-        page = panel(self, backend.sendChar)
-
+        page = panel(self, None)
         # backendThread = threading.Thread(target=self.initBackendThread, args=(backend, page))
         # backendThread.start()
-
         self.AddPage(page, label, selected)
         self.initBackend(backend, page)
 
@@ -27,11 +24,11 @@ class AterAuiNotebook(aui.AuiNotebook):
         if not page.session:
             #TO-DO: open session dialog to get connnection info
             page.session = SessionManager(self.parent)
-
-        if len(page.session.sessionManagerDialog.host.GetValue()) == 0:
+        if len(page.session.sessionManagerDialog.auth_info.hostname) == 0:
             return
 
-        term = backend(page.writeText)
+        term = backend(page.writeText, page.session.sessionManagerDialog.auth_info)
+        page.sendToBackend = term.sendChar
         page.term = term
 
 

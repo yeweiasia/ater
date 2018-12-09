@@ -1,7 +1,8 @@
 import wx
 from wx.richtext import RichTextCtrl
-from wx.richtext import RichTextAttr
 from ConfigHolder import ConfigHolder
+from ast import literal_eval
+from colors import strip_color
 
 class TerminalTabPanel(wx.Panel):
 
@@ -17,16 +18,23 @@ class TerminalTabPanel(wx.Panel):
         self.outputCtrl.Bind(wx.EVT_CHAR, self.OnChar)
 
         #TO-DO:load color schema from config
-        self.outputCtrl.SetDefaultStyle(wx.TextAttr(ConfigHolder().config.get('color', 'default_text_color')))
+
+        #TO-DO not safe
+        rgbColour = literal_eval(ConfigHolder().config.get('color', 'default_text_color'))
+
+        self.outputCtrl.SetDefaultStyle(wx.TextAttr(wx.Colour(rgbColour)))
         self.outputCtrl.SetBackgroundColour(ConfigHolder().config.get('color', 'terminal_background_color'))
-        self.writeText("begin")
+        #self.writeText("begin")
 
         sizer.Add(self.outputCtrl, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
     def writeText(self, text):
+
+        #TO-DO deal with text colour
+        text = strip_color(text)
         self.outputCtrl.WriteText(text)
 
     def OnChar(self, event):
-        self.sendToBackend(event.GetKeyCode())
-        event.Skip()
+        self.sendToBackend(chr(event.GetKeyCode()))
+        #event.Skip()
