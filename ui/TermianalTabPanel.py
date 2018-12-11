@@ -8,6 +8,10 @@ class TerminalTabPanel(wx.Panel):
 
     def __init__(self, parent, sendToBackend):
         wx.Panel.__init__(self, parent=parent)
+
+        self.lastPosition = 0
+        self.lastFreezePosition = 0
+        self.commandSequence = ""
         self.sendToBackend = sendToBackend
         self.session = None
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -18,7 +22,6 @@ class TerminalTabPanel(wx.Panel):
         self.outputCtrl.Bind(wx.EVT_CHAR, self.OnChar)
 
         #TO-DO:load color schema from config
-
         #TO-DO not safe
         rgbColour = literal_eval(ConfigHolder().config.get('color', 'default_text_color'))
 
@@ -31,6 +34,9 @@ class TerminalTabPanel(wx.Panel):
 
     def writeText(self, text):
 
+        if len(text) == 1 and ord(text) == 7:
+            return
+
         #TO-DO deal with text colour
         text = strip_color(text)
 
@@ -38,13 +44,25 @@ class TerminalTabPanel(wx.Panel):
         if not self.dealingWithSpecialKey(text):
             self.outputCtrl.WriteText(text)
 
+        self.lastPosition = self.outputCtrl.GetLastPosition()
+        self.lastFreezePosition = self.lastPosition
         # scroll to the end of output
         #self.outputCtrl.SetScrollPos( wx.VERTICAL,self.outputCtrl.GetScrollRange(wx.VERTICAL))
         self.outputCtrl.ShowPosition(self.outputCtrl.GetLastPosition())
 
 
     def OnChar(self, event):
-        self.sendToBackend(chr(event.GetKeyCode()))
+
+        keyCode = event.GetKeyCode()
+        keyChar = chr(keyCode)
+        # press enter to send command and clear the command sequence buffer
+        if keyCode == 13:
+            self.commandSequence = ""
+        # ansi code 127 id DEL
+        if keyCode > 32 and keyCode != 127:
+            self.commandSequence += keyChar
+
+        self.sendToBackend(keyChar)
         #event.Skip()
 
     def dealingWithSpecialKey(self, keyValue):
