@@ -15,19 +15,23 @@ class TerminalTabPanel(wx.Panel):
         self.sendToBackend = sendToBackend
         self.session = None
         sizer = wx.BoxSizer(wx.VERTICAL)
-        #TO-DO Termainl here
+        # TO-DO Termainl here
 
         self.outputCtrl = RichTextCtrl(self, -1, style=wx.TE_RICH2 | wx.TE_MULTILINE | wx.EXPAND | wx.BORDER_SUNKEN | wx.TE_DONTWRAP,
                              size=(800, 450))
         self.outputCtrl.Bind(wx.EVT_CHAR, self.OnChar)
 
-        #TO-DO:load color schema from config
-        #TO-DO not safe
+        # TO-DO:load color schema from config
+        # TO-DO not safe
         rgbColour = literal_eval(ConfigHolder().config.get('color', 'default_text_color'))
 
         self.outputCtrl.SetDefaultStyle(wx.TextAttr(wx.Colour(rgbColour)))
         self.outputCtrl.SetBackgroundColour(ConfigHolder().config.get('color', 'terminal_background_color'))
-        #self.writeText("begin")
+        # self.writeText("begin")
+
+        # set fixed width font
+        font_ = wx.Font(10,wx.MODERN, wx.NORMAL, wx.NORMAL, False)
+        self.outputCtrl.SetFont(font_)
 
         sizer.Add(self.outputCtrl, 1, wx.EXPAND)
         self.SetSizer(sizer)
